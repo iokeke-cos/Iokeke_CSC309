@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import heapq
 from collections import deque
+from itertools import count
 
 # -------------------------------
 # Maze Definition
@@ -212,6 +214,94 @@ def bfs_steps():
                 frontier.append(
                     Node(child_state, node, action, node.cost + 1)
                 )
+                
+
+#Heuristic Function
+#=============================
+def heuristic(state):
+    x1, y1 = state
+    x2, y2 = goal
+    return abs(x1 - x2) + abs(y1 - y2)
+
+
+#=====================================
+#A* Search(Uses f(n) = g(n) + h(n))
+#==================================
+def astar_steps():
+    frontier = []
+    counter = count()
+
+    start_node = Node(start, cost=0)
+
+    #heapq.heappush(frontier, (0, next(counter), start_node))
+
+    explored = set()
+
+    while True:
+        if not frontier:
+            return
+
+        _, _, node = heapq.heappop(frontier)
+
+        yield node.state, len(explored), len(frontier), node.cost
+
+        if goal_test(node.state):
+            yield reconstruct_path(node), "path"
+            return
+
+        explored.add(node.state)
+
+        for action in actions(node.state):
+            child_state = result(node.state, action)
+
+            if child_state in explored:
+                continue
+
+            g = node.cost + 1
+            h = heuristic(child_state)
+            f = g + h
+
+            child_node = Node(child_state, node, action, g)
+
+            #heapq.heappush(frontier,(f, next(counter), child_node))
+    
+    
+#==========================================   
+#Greedy Best-First Search(Uses f(n) = h(n))
+#========================================            
+def greedy_steps():
+    frontier = []
+    counter = count()
+
+    start_node = Node(start, cost=0)
+
+    #heapq.heappush(frontier, (heuristic(start), next(counter), start_node))
+
+    explored = set()
+
+    while True:
+        if not frontier:
+            return
+
+        _, _, node = heapq.heappop(frontier)
+
+        yield node.state, len(explored), len(frontier), node.cost
+
+        if goal_test(node.state):
+            yield reconstruct_path(node), "path"
+            return
+
+        explored.add(node.state)
+
+        for action in actions(node.state):
+            child_state = result(node.state, action)
+
+            if child_state in explored:
+                continue
+
+            child_node = Node(child_state, node, action, node.cost + 1)
+
+            #heapq.heappush(frontier,(heuristic(child_state), next(counter), child_node))                      
 
 # -------------------------------
 # Animation
@@ -235,8 +325,17 @@ def animate_solver(algorithm="BFS"):
     explored_text = ax.text(3, -1, "", fontsize=10)
     # cost_text = ax.text(6, -1, "", fontsize=10)
 
-    steps = bfs_steps() if algorithm == "BFS" else dfs_steps()
-
+    if algorithm == "BFS":
+        steps = bfs_steps()
+    elif algorithm == "DFS":
+        steps = dfs_steps()
+    elif algorithm == "A*":
+        steps = astar_steps()
+    elif algorithm == "GREEDY":
+        steps = greedy_steps()
+    else:
+        raise ValueError("Unknown algorithm")
+    
     def update(frame):
         nonlocal maze_img
 
@@ -260,7 +359,9 @@ def animate_solver(algorithm="BFS"):
         update,
         frames=steps,
         interval=500,
-        repeat=False
+        repeat=False,
+        cache_frame_data=False
+
     )
 
     plt.show()
@@ -269,4 +370,27 @@ def animate_solver(algorithm="BFS"):
 # Run
 # -------------------------------
 if __name__ == "__main__":
-    animate_solver("DFS")   # change to "DFS" if needed
+
+    print("\n=== MAZE SEARCH ALGORITHMS ===")
+    print("1. BFS")
+    print("2. DFS")
+    print("3. A*")
+    print("4. Greedy Best-First")
+
+    choice = input("Select algorithm (1-4): ")
+
+    if choice == "1":
+        animate_solver("BFS")
+
+    elif choice == "2":
+        animate_solver("DFS")
+
+    elif choice == "3":
+        animate_solver("A*")
+
+    elif choice == "4":
+        animate_solver("GREEDY")
+
+    else:
+        print("Invalid choice. Running BFS by default.")
+        animate_solver("BFS")
