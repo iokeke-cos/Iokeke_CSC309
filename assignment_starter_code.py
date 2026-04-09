@@ -4,6 +4,7 @@
 
 import heapq
 from collections import deque
+battery_limit = 7   
 
 # --------- Graph Definition ---------
 graph = {
@@ -85,7 +86,7 @@ def bfs(graph, start, goal):
 # ===================================
 # Uniform Cost Search (UCS)
 # ===================================
-def ucs(graph, start, goal):
+def ucs_battery(graph, start, goal, battery_limit):
     frontier = []
     heapq.heappush(frontier, (0, start, [start]))
     explored = set()
@@ -95,6 +96,10 @@ def ucs(graph, start, goal):
         cost, node, path = heapq.heappop(frontier)
         nodes_expanded += 1
 
+        # Skip paths that exceed battery
+        if cost > battery_limit:
+            continue
+
         if node == goal:
             return path, cost, nodes_expanded
 
@@ -102,24 +107,31 @@ def ucs(graph, start, goal):
             explored.add(node)
 
             for neighbor, weight in graph[node].items():
-                heapq.heappush(frontier, (cost + weight, neighbor, path + [neighbor]))
+                new_cost = cost + weight
+
+                # Only add if within battery
+                if new_cost <= battery_limit:
+                    heapq.heappush(frontier, (new_cost, neighbor, path + [neighbor]))
 
     return None, None, nodes_expanded
 
 # ===================================
 # A* Search
 # ===================================
-def a_star(graph, start, goal, heuristic):
+def a_star_battery(graph, start, goal, heuristic, battery_limit):
     frontier = []
     heapq.heappush(frontier, (heuristic[start], 0, start, [start]))
     explored = set()
     nodes_expanded = 0
 
-
     while frontier:
         f, g, node, path = heapq.heappop(frontier)
         nodes_expanded += 1
-        
+
+        # Skip paths that exceed battery
+        if g > battery_limit:
+            continue
+
         if node == goal:
             return path, g, nodes_expanded
 
@@ -128,20 +140,37 @@ def a_star(graph, start, goal, heuristic):
 
             for neighbor, weight in graph[node].items():
                 new_g = g + weight
-                new_f = new_g + heuristic[neighbor]
-                heapq.heappush(frontier, (new_f, new_g, neighbor, path + [neighbor]))
+
+                # Only explore valid battery paths
+                if new_g <= battery_limit:
+                    new_f = new_g + heuristic[neighbor]
+                    heapq.heappush(frontier, (new_f, new_g, neighbor, path + [neighbor]))
 
     return None, None, nodes_expanded
 
+
+#Automatic Battery Testing
+#===========================================
+def test_battery_levels():
+    print("\n===== BATTERY ANALYSIS =====")
+    
+    for battery in range(4, 11):
+        path, cost, _ = ucs_battery(graph, start, goal, battery)
+        
+        if path:
+            print(f"Battery = {battery}: :) Path Found → {path} | Cost = {cost}")
+        else:
+            print(f"Battery = {battery}: xx No Path")
+            
 # ===================================
 # Run and Compare
 # ===================================
 if __name__ == "__main__":
     dfs_path, dfs_nodes = dfs(graph, start, goal)
     bfs_path, bfs_nodes = bfs(graph, start, goal)
-    ucs_path, ucs_cost, ucs_nodes = ucs(graph, start, goal)
-    a_path, a_cost, a_nodes = a_star(graph, start, goal, heuristic)
-
+    ucs_b_path, ucs_b_cost, ucs_b_nodes = ucs_battery(graph, start, goal, battery_limit)
+    a_b_path, a_b_cost, a_b_nodes = a_star_battery(graph, start, goal, heuristic, battery_limit)
+    test_battery_levels()
     print("\n===== RESULTS =====")
 
     print("\nDFS:")
@@ -153,12 +182,12 @@ if __name__ == "__main__":
     print("Steps:", len(bfs_path) - 1)
     print("Nodes Expanded:", bfs_nodes)
 
-    print("\nUCS:")
-    print("Path:", ucs_path)
-    print("Cost:", ucs_cost)
-    print("Nodes Expanded:", ucs_nodes)
+    print("\nUCS with Battery:")
+    print("Path:", ucs_b_path)
+    print("Cost:", ucs_b_cost)
+    print("Nodes Expanded:", ucs_b_nodes)
 
-    print("\nA*:")
-    print("Path:", a_path)
-    print("Cost:", a_cost)
-    print("Nodes Expanded:", a_nodes)
+    print("\nA* with Battery:")
+    print("Path:", a_b_path)
+    print("Cost:", a_b_cost)
+    print("Nodes Expanded:", a_b_nodes)
