@@ -224,8 +224,9 @@ def heuristic(state):
     return abs(x1 - x2) + abs(y1 - y2)
 
 
+
 #=====================================
-#A* Search(Uses f(n) = g(n) + h(n))
+# #A* Search(Uses f(n) = g(n) + h(n))
 #==================================
 def astar_steps():
     frontier = []
@@ -233,7 +234,8 @@ def astar_steps():
 
     start_node = Node(start, cost=0)
 
-    #heapq.heappush(frontier, (0, next(counter), start_node))
+    # MUST initialize heap
+    heapq.heappush(frontier, (0, next(counter), start_node))
 
     explored = set()
 
@@ -263,9 +265,10 @@ def astar_steps():
 
             child_node = Node(child_state, node, action, g)
 
-            #heapq.heappush(frontier,(f, next(counter), child_node))
-    
-    
+            #  MUST push into heap
+            heapq.heappush(frontier, (f, next(counter), child_node))
+
+            
 #==========================================   
 #Greedy Best-First Search(Uses f(n) = h(n))
 #========================================            
@@ -275,13 +278,14 @@ def greedy_steps():
 
     start_node = Node(start, cost=0)
 
-    #heapq.heappush(frontier, (heuristic(start), next(counter), start_node))
+    # MUST initialize heap
+    heapq.heappush(frontier, (heuristic(start), next(counter), start_node))
 
     explored = set()
 
     while True:
         if not frontier:
-            return
+            return   # means no solution found OR bug
 
         _, _, node = heapq.heappop(frontier)
 
@@ -301,8 +305,11 @@ def greedy_steps():
 
             child_node = Node(child_state, node, action, node.cost + 1)
 
-            #heapq.heappush(frontier,(heuristic(child_state), next(counter), child_node))                      
-
+            heapq.heappush(
+                frontier,
+                (heuristic(child_state), next(counter), child_node)
+            )
+            
 # -------------------------------
 # Animation
 # -------------------------------
@@ -327,14 +334,23 @@ def animate_solver(algorithm="BFS"):
 
     if algorithm == "BFS":
         steps = bfs_steps()
+        
     elif algorithm == "DFS":
         steps = dfs_steps()
+        
     elif algorithm == "A*":
-        steps = astar_steps()
+        steps = list(astar_steps())
+        if not steps:
+            print("No path found OR A* returned empty!")
+            return
+
     elif algorithm == "GREEDY":
         steps = greedy_steps()
+        
     else:
         raise ValueError("Unknown algorithm")
+    
+    
     
     def update(frame):
         nonlocal maze_img
@@ -347,7 +363,7 @@ def animate_solver(algorithm="BFS"):
             x, y = state
             maze_img[x][y] = 0.5
 
-            frontier_text.set_text(f"Frontier: {frontier_size}")
+            frontier_text.set_text(f"Frontier: {frontier_size} ")
             explored_text.set_text(f"Explored: {explored_size}")
             # cost_text.set_text(f"Cost: {cost}")
 
@@ -358,7 +374,7 @@ def animate_solver(algorithm="BFS"):
         fig,
         update,
         frames=steps,
-        interval=500,
+        interval=50,
         repeat=False,
         cache_frame_data=False
 
@@ -376,6 +392,8 @@ if __name__ == "__main__":
     print("2. DFS")
     print("3. A*")
     print("4. Greedy Best-First")
+    print("Start:", start)
+    print("Goal:", goal)
 
     choice = input("Select algorithm (1-4): ")
 
