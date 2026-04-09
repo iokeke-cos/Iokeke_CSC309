@@ -57,7 +57,8 @@ def dfs(graph, start, goal):
         return None
 
     path = dfs_helper(start, [start])
-    return path, nodes_expanded
+    steps = len(path) - 1 if path else 0
+    return path, steps, nodes_expanded
 
 # ===================================
 # Breadth-First Search (BFS)
@@ -166,7 +167,7 @@ def test_battery_levels():
 # Run and Compare
 # ===================================
 if __name__ == "__main__":
-    dfs_path, dfs_nodes = dfs(graph, start, goal)
+    dfs_path, dfs_steps, dfs_nodes = dfs(graph, start, goal)    
     bfs_path, bfs_nodes = bfs(graph, start, goal)
     ucs_b_path, ucs_b_cost, ucs_b_nodes = ucs_battery(graph, start, goal, battery_limit)
     a_b_path, a_b_cost, a_b_nodes = a_star_battery(graph, start, goal, heuristic, battery_limit)
@@ -175,6 +176,7 @@ if __name__ == "__main__":
 
     print("\nDFS:")
     print("Path:", dfs_path)
+    print("Steps:", dfs_steps,"not optimal")
     print("Nodes Expanded:", dfs_nodes)
 
     print("\nBFS:")
